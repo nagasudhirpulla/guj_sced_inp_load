@@ -1,0 +1,14 @@
+{
+    "inputMode": "ftp",
+    "folderPath": "data",
+    "ftpUrl": "",
+    "ftpUname": "",
+    "ftpPass": "",
+    "ftpFolderPath": "",
+    "dbHost": "",
+    "dbPort": 0,
+    "dbName": "",
+    "dbUname": "",
+    "dbPass": "",
+    "gens": []
+}
