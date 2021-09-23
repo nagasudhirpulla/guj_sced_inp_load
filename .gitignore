@@ -1,6 +1,7 @@
 config.json
 project_env/
 data/*
+gamsFolder/*
 !data/.gitinclude
 build/*
 __pycache__
