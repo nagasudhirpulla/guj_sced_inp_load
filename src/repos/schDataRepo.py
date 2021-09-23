@@ -59,3 +59,44 @@ class SchedulesRepo():
                 # close the connection object also
                 dbConn.close()
         return isInsertSuccess
+
+    def getGenSchedules(self, schType: str, genId: int, revisionNum: int, startTime: dt.datetime, endTime: dt.datetime) -> List[ISchRow]:
+        schObjs: List[ISchRow] = []
+        try:
+            # get the connection object
+            conn = psycopg2.connect(host=self.dbHost, dbname=self.dbname,
+                                    user=self.uname, password=self.dbPass)
+            # get the cursor from connection
+            cur = conn.cursor()
+            # create the query
+            postgreSQL_select_Query = "select sch_time, sch_val from public.gens_data where sch_type=%s and g_id=%s and rev=%s and (sch_time between %s and %s) order by sch_time"
+
+            # execute the query
+            cur.execute(postgreSQL_select_Query,
+                        (schType, genId, revisionNum, startTime, endTime))
+
+            # fetch all the records from cursor
+            records = cur.fetchall()
+
+            # iterate through all the fetched records
+            for rowIter in range(len(records)):
+                dbRow = records[rowIter]
+                schObj: ISchRow = {
+                    "schTime": dbRow[0],
+                    "schVal": dbRow[1],
+                    "genId": genId,
+                    "schType": schType,
+                    "rev": revisionNum
+                }
+                schObjs.append(schObj)
+        except (Exception, psycopg2.Error) as error:
+            print("Error while fetching data from PostgreSQL", error)
+            schObjs = []
+        finally:
+            # closing database connection and cursor
+            if(conn):
+                # close the cursor object to avoid memory leaks
+                cur.close()
+                # close the connection object also
+                conn.close()
+        return schObjs
