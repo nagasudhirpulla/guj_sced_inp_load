@@ -10,7 +10,7 @@ from src.repos.gensMasterDataRepo import GensMasterRepo
 from src.repos.schDataRepo import SchedulesRepo
 from src.typeDefs.schRow import ISchRow
 
-from openpyxl import load_workbook
+import openpyxl
 
 # read config file
 appConf = loadAppConfig()
@@ -33,4 +33,39 @@ if not targetDtStr == None:
 
 # derive the filenames for the target date
 gamsExcelPath = appConf["gamsExcelPath"]
+# check if gams excel file exists
+isGamsExcelPresent = os.path.isfile(gamsExcelPath)
 
+if not isGamsExcelPresent:
+    print("GAMS input excel not present...")
+    exit(0)
+
+# Data sheet column numbers
+gensSheetName = "Data"
+stationColNum = 3
+vcColNum = 8
+unitCapColNum = 11
+tmColNum = 12
+rUpColNum = 13
+rDnColNum = 14
+
+# get the generators info from db
+gensRepo = GensMasterRepo(
+    appConf["dbHost"], appConf["dbName"], appConf["dbUname"], appConf["dbPass"])
+gens = gensRepo.getGens()
+
+gamsExcel = openpyxl.load_workbook(gamsExcelPath)
+
+# write data to generators data sheet
+if gensSheetName in gamsExcel.sheetnames:
+    print('Generators data sheet does not exist in gams input excel file')
+gensSheet = gamsExcel[gensSheetName]
+for gItr, g in enumerate(gens):
+    gensSheet.cell(row=gItr+2, column=stationColNum).value = g["name"]
+    gensSheet.cell(row=gItr+2, column=vcColNum).value = g["vcPu"]
+    gensSheet.cell(row=gItr+2, column=unitCapColNum).value = g["capPu"]
+    gensSheet.cell(row=gItr+2, column=tmColNum).value = g["tmPu"]
+    gensSheet.cell(row=gItr+2, column=rUpColNum).value = g["rUpPu"]
+    gensSheet.cell(row=gItr+2, column=rDnColNum).value = g["rDnPu"]
+
+print("execution complete...")
