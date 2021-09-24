@@ -33,9 +33,8 @@ targetDtStr = args.date
 if not targetDtStr == None:
     targetDt = dt.datetime.strptime(targetDtStr, "%Y-%m-%d")
 
-# derive the filenames for the target date
-gamsExcelPath = appConf["gamsExcelPath"]
 # check if gams excel file exists
+gamsExcelPath = appConf["gamsExcelPath"]
 isGamsExcelPresent = os.path.isfile(gamsExcelPath)
 
 if not isGamsExcelPresent:
@@ -89,7 +88,7 @@ for gItr, g in enumerate(gens):
         "onbar", g["id"], 0, targetDt, targetDt+dt.timedelta(hours=23, minutes=59))
     # check if we got 96 rows
     if not len(genOnbarRows) == 96:
-        print("96 rows not present in onabar data of {0} for the date {1}".format(
+        print("96 rows not present in onbar data of {0} for the date {1}".format(
             g["name"], targetDt))
         exit(0)
 
@@ -97,14 +96,14 @@ for gItr, g in enumerate(gens):
         onbarSheet.cell(row=gItr+2, column=blkItr +
                         3).value = genOnbarRows[blkItr]["schVal"]
 
-# write data to generators onbar sheet
+# write data to generators schedule sheet
 schSheetName = "Schedule"
 if not schSheetName in gamsExcel.sheetnames:
     print('Onbar data sheet does not exist in gams input excel file')
     exit(0)
 schSheet = gamsExcel[schSheetName]
 
-# populate data to onbar sheet
+# populate data to schedule sheet
 for gItr, g in enumerate(gens):
     schSheet.cell(row=gItr+2, column=1).value = g["name"]
     schSheet.cell(row=gItr+2, column=2).value = 1
