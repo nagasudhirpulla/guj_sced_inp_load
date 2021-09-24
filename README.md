@@ -1,13 +1,13 @@
 # guj_sced_inp_load
 loads the input data for gujarat sced into database
 
-## Script 1
+## Script 1 - Data files fetch
 * Reads the data files for the target dates from FTP location and pastes in the input data folder
 
-## Script 2
+## Script 2 - Data Load into DB from files
 * Reads the data files for the target dates from folder location and loads the data into the database
 
-## Script 3
+## Script 3 - Data into GAMS excel and push results to DB
 * Reads the data from db for a target date and populates the input excel file, runs the optimization and saves the output to db
 
 ## Useful Links
