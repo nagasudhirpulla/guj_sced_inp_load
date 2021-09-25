@@ -20,6 +20,7 @@ dbPass = appConf["dbPass"]
 gamsExePath = appConf["gamsExePath"]
 gamsCodePath = appConf["gamsCodePath"]
 gamsLstPath = appConf["gamsLstPath"]
+gamsExcelPath = appConf["gamsExcelPath"]
 
 # make target date as tomorrow
 targetDt = dt.datetime.now() + dt.timedelta(days=1)
@@ -33,8 +34,7 @@ targetDtStr = args.date
 if not targetDtStr == None:
     targetDt = dt.datetime.strptime(targetDtStr, "%Y-%m-%d")
 
-# check if gams excel file exists
-gamsExcelPath = appConf["gamsExcelPath"]
+# check - check if gams excel file exists
 isGamsExcelPresent = os.path.isfile(gamsExcelPath)
 
 if not isGamsExcelPresent:
@@ -43,7 +43,7 @@ if not isGamsExcelPresent:
 
 # get the generators info from db
 gensRepo = GensMasterRepo(
-    appConf["dbHost"], appConf["dbName"], appConf["dbUname"], appConf["dbPass"])
+    dbHost, dbName, dbUname, dbPass)
 gens = gensRepo.getGens()
 
 gamsExcel = openpyxl.load_workbook(gamsExcelPath)
@@ -71,6 +71,7 @@ for gItr, g in enumerate(gens):
 
 # write data to generators onbar sheet
 onbarSheetName = "DCOnbar"
+# check - if onbar data sheet of gams input excel file exists
 if not onbarSheetName in gamsExcel.sheetnames:
     print('Onbar data sheet does not exist in gams input excel file')
     exit(0)
@@ -86,7 +87,7 @@ for gItr, g in enumerate(gens):
 
     genOnbarRows = schRepo.getGenSchedules(
         "onbar", g["id"], 0, targetDt, targetDt+dt.timedelta(hours=23, minutes=59))
-    # check if we got 96 rows
+    # check - check if we got 96 rows for loading onbar data for a generator for the desired date
     if not len(genOnbarRows) == 96:
         print("96 rows not present in onbar data of {0} for the date {1}".format(
             g["name"], targetDt))
@@ -98,8 +99,9 @@ for gItr, g in enumerate(gens):
 
 # write data to generators schedule sheet
 schSheetName = "Schedule"
+# check - if schedule data sheet of gams input excel file exists
 if not schSheetName in gamsExcel.sheetnames:
-    print('Onbar data sheet does not exist in gams input excel file')
+    print('schedule data sheet does not exist in gams input excel file')
     exit(0)
 schSheet = gamsExcel[schSheetName]
 
@@ -110,7 +112,7 @@ for gItr, g in enumerate(gens):
 
     genSchRows = schRepo.getGenSchedules(
         "sch", g["id"], 0, targetDt, targetDt+dt.timedelta(hours=23, minutes=59))
-    # check if we got 96 rows
+    # check - check if we got 96 rows for loading schedule data for a generator for the desired date
     if not len(genSchRows) == 96:
         print("96 rows not present in schedule data of {0} for the date {1}".format(
             g["name"], targetDt))
@@ -120,17 +122,20 @@ for gItr, g in enumerate(gens):
         schSheet.cell(row=gItr+2, column=blkItr +
                       3).value = genSchRows[blkItr]["schVal"]
 
+# save and close the gams input excel file
 gamsExcel.save(gamsExcelPath)
 gamsExcel.close()
 
-# run GAMS on excel data
+# run GAMS on input excel file
 isGamsExecSuccess = runGams(gamsExePath, gamsCodePath, gamsLstPath)
+# check - check if gams execution is successful
 if not isGamsExecSuccess:
     print("GAMS execution was not successful...")
     exit(0)
 
 # push output data from GAMS excel to db
 resultsSheetName = "Result Report"
+# check - if gams excel results sheet of gams input excel file exists
 if not (resultsSheetName in gamsExcel.sheetnames):
     print('GAMS results data sheet does not exist in gams excel file...')
     exit(0)
@@ -138,19 +143,20 @@ if not (resultsSheetName in gamsExcel.sheetnames):
 # read dataframe from output sheet
 gamsResDf = pd.read_excel(gamsExcelPath, sheet_name=resultsSheetName)
 gamsResCols = gamsResDf.columns.tolist()
+# check - check if gams excel result sheet was populated with at least 98 blocks
 if len(gamsResCols) < 98:
     print("result sheet does not have at least 98 columns...")
-    exit()
+    exit(0)
 
 gamsResCols = gamsResCols[0:98]
 
-# check if all the blocks columns are present in the result sheet
+# check - check if the gams excel result sheet was populated with all 96 blocks
 isAllBlksInResPresent = all([(x in gamsResCols) for x in range(1, 97)])
 if not isAllBlksInResPresent:
     print("result sheet does not have columns named 1 to 96")
     exit(0)
 
-# check if all generators are present in database
+# check - check if all the database generators are present in the gams excel result sheet
 resGens = gamsResDf.iloc[:, 0].tolist()
 dbGenNames = [g["name"] for g in gens]
 isAllDbGensInRes = all([(x in resGens) for x in dbGenNames])
@@ -158,11 +164,12 @@ if not isAllDbGensInRes:
     print("All DB generators are not in GAMS result sheet")
     exit(0)
 
-# get generator names dictionary
+# create generator names dictionary for ids lookup
 genIdsDict = {}
 for g in gens:
     genIdsDict[g["name"]] = g["id"]
 
+# create optimal schedules rows
 optSchRows = []
 for genItr in range(gamsResDf.shape[0]):
     genName = gamsResDf.iloc[genItr, 0]
@@ -180,7 +187,7 @@ for genItr in range(gamsResDf.shape[0]):
         }
         optSchRows.append(schRow)
 
-# push schedules data to db
+# push optimal schedules data to db
 isSchInsertSuccess = schRepo.insertSchedules(optSchRows)
 print("Optimal Schedule Insertion status = {0}".format(isSchInsertSuccess))
 
