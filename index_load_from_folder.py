@@ -36,12 +36,12 @@ onbarFPath = os.path.join(inpFolderPath, "Declare Capacity_{0}.csv".format(
 schFPath = os.path.join(inpFolderPath, "Injection Schedule_{0}.csv".format(
     dt.datetime.strftime(targetDt, '%d_%m_%Y')))
 
-# check if relevant ON-BAR DC file is present
+# check - check if relevant ON-BAR DC file is present
 isOnbarFilePresent = os.path.isfile(onbarFPath)
 if not isOnbarFilePresent:
     print("onbar file not present")
 
-# check if relevant Schedule file is present
+# check - check if relevant Schedule file is present
 isSchFilePresent = os.path.isfile(schFPath)
 if not isSchFilePresent:
     print("schedule file not present")
@@ -62,7 +62,7 @@ reqGens = list(genIdsDict.keys())
 # read data from onbar file
 onbarDf = pd.read_csv(onbarFPath, nrows=96)
 
-# check if all generators are present in onbar file
+# check - check if all generators are present in onbar file
 onbarGens = [x for x in onbarDf.columns if x in reqGens]
 
 # extract generators data from csv
@@ -73,17 +73,17 @@ schDf = pd.read_csv(schFPath, skiprows=1, nrows=96)
 schDf = onbarDf[reqGens]
 
 
-# check if onbar data has 96 rows
+# check - check if onbar data of input csv has 96 rows
 isOnbarRows96 = onbarDf.shape[0] == 96
 if not isOnbarRows96:
     print("onbar DC file does not have 96 rows")
 
-# check if schedule data has 96 rows
+# check - check if schedule data of input csv has 96 rows
 isSchRows96 = schDf.shape[0] == 96
 if not isSchRows96:
     print("Schedule file does not have 96 rows")
 
-# check if all on bar gens are present in sch df
+# check - check if all on bar gens are present in sch df
 isOnbarGensInSchGens = len(
     [x for x in schDf.columns if not (x in onbarGens)]) == 0
 if not isOnbarGensInSchGens:
