@@ -1,15 +1,17 @@
 config.json
 project_env/
-data/*
 gamsFolder/*
+!gamsFolder/.gitinclude
+data/*
 !data/.gitinclude
+dumps/*
+!dumps/.gitinclude
 build/*
 __pycache__
 *.py[cod]
 *$py.class
 .mypy_cache/
 assets/
-dumps/
 *.DS_Store
 
 # Distribution / packaging 

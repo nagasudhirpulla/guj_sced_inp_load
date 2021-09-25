@@ -10,6 +10,8 @@ loads the input data for gujarat sced into database
 ## Script 3 - Data into GAMS excel and push results to DB
 * Reads the data from db for a target date and populates the input excel file, runs the optimization and saves the output to db
 
+## Script 4 - Publish input and results data to ftp location
+
 ## checks in input data loading to db script
 * check if relevant ON-BAR DC file is present
 * check if relevant Schedule file is present       
