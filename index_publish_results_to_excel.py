@@ -9,7 +9,7 @@ from openpyxl import Workbook
 from src.config.appConfig import loadAppConfig
 from src.repos.gensMasterDataRepo import GensMasterRepo
 from src.repos.schDataRepo import SchedulesRepo
-from src.typeDefs.schRow import ISchRow
+from src.services.ftpService import uploadFileToFtp
 
 # read config file
 appConf = loadAppConfig()
@@ -21,6 +21,10 @@ gamsExePath = appConf["gamsExePath"]
 gamsCodePath = appConf["gamsCodePath"]
 gamsLstPath = appConf["gamsLstPath"]
 gamsExcelPath = appConf["gamsExcelPath"]
+ftpHost = appConf["ftpHost"]
+ftpUname = appConf["ftpUname"]
+ftpPass = appConf["ftpPass"]
+ftpResFolder = appConf["ftpResultsFolder"]
 
 # make target date as tomorrow
 targetDt = dt.datetime.now() + dt.timedelta(days=1)
@@ -188,10 +192,16 @@ for gItr, g in enumerate(gens):
                            3).value = math.ceil(genOnbarRows[blkItr]["schVal"]/gens[gItr]["capPu"])
 
 # derive excel filename and file path
-resultsFilename = "sced_results_{0}.xlsx".format(dt.datetime.strftime(targetDt, "%Y_%m_%d"))
+resultsFilename = "sced_results_{0}.xlsx".format(
+    dt.datetime.strftime(targetDt, "%Y_%m_%d"))
 resultsFilePath = os.path.join(resDumpFolder, resultsFilename)
 
 # save workbook in dumps folder
 wb.save(resultsFilePath)
+wb.close()
 
 # TODO copy results file to ftp location
+isResFtpUploadSuccess = uploadFileToFtp(
+    resultsFilePath, ftpHost, ftpUname, ftpPass, ftpResFolder)
+print("Results excel FTP upload status = {0}".format(isResFtpUploadSuccess))
+print("SCED output data excel publish program complete...")
