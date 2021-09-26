@@ -200,7 +200,7 @@ resultsFilePath = os.path.join(resDumpFolder, resultsFilename)
 wb.save(resultsFilePath)
 wb.close()
 
-# TODO copy results file to ftp location
+# copy results file to ftp location
 isResFtpUploadSuccess = uploadFileToFtp(
     resultsFilePath, ftpHost, ftpUname, ftpPass, ftpResFolder)
 print("Results excel FTP upload status = {0}".format(isResFtpUploadSuccess))
