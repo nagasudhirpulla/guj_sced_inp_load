@@ -11,6 +11,7 @@ loads the input data for gujarat sced into database
 * Reads the data from db for a target date and populates the input excel file, runs the optimization and saves the output to db
 
 ## Script 4 - Publish input and results data to ftp location
+* Reads input and output data from db, creates excel file and stores it in a local dumps folder and a remote ftp location 
 
 ## checks in input data loading to db script
 * check if relevant ON-BAR DC file is present
