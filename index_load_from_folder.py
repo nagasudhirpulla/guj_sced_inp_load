@@ -70,7 +70,7 @@ onbarDf = onbarDf[onbarGens]
 
 # read data from schedule file
 schDf = pd.read_csv(schFPath, skiprows=1, nrows=96)
-schDf = onbarDf[reqGens]
+schDf = schDf[reqGens]
 
 
 # check - check if onbar data of input csv has 96 rows
