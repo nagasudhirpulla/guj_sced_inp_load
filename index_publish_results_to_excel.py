@@ -188,7 +188,7 @@ for gItr, g in enumerate(gens):
                            3).value = math.ceil(genOnbarRows[blkItr]["schVal"]/gens[gItr]["capPu"])
 
 # derive excel filename and file path
-resultsFilename = "sced_results_{1}.xlsx".format(dt.datetime.strftime(targetDt, "%Y_%m_%d"))
+resultsFilename = "sced_results_{0}.xlsx".format(dt.datetime.strftime(targetDt, "%Y_%m_%d"))
 resultsFilePath = os.path.join(resDumpFolder, resultsFilename)
 
 # save workbook in dumps folder
