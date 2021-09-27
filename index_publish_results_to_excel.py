@@ -91,6 +91,14 @@ numUnitsSheet.cell(row=1, column=2).value = "Region"
 for blk in range(1, 97):
     numUnitsSheet.cell(row=1, column=blk+2).value = blk
 
+# create cost sheet
+costSheet = wb.create_sheet("ScedCost")
+# populate header to number of units sheet
+costSheet.cell(row=1, column=1).value = "Plant Name"
+costSheet.cell(row=1, column=2).value = "Region"
+for blk in range(1, 97):
+    costSheet.cell(row=1, column=blk+2).value = blk
+
 # get the generators info from db
 gensRepo = GensMasterRepo(
     dbHost, dbName, dbUname, dbPass)
@@ -171,25 +179,34 @@ for gItr, g in enumerate(gens):
         optSheet.cell(row=gItr+2, column=blkItr +
                       3).value = genOptRows[blkItr]["schVal"]
 
-    # populate data to sced sheet
+    # populate data to sced sheet, number of units sheet and cost sheet
     scedSheet.cell(row=gItr+2, column=1).value = g["name"]
     scedSheet.cell(row=gItr+2, column=2).value = 1
-    # check - check if scedule and optimal schedule have same number of rows
-    if not len(genOptRows) == len(genSchRows):
-        print("Schedule and optimal schedule rows are not of same size for {0}".format(
-            targetDt))
-        exit(0)
-    for blkItr in range(len(genOptRows)):
-        scedSheet.cell(row=gItr+2, column=blkItr +
-                       3).value = genOptRows[blkItr]["schVal"] - genSchRows[blkItr]["schVal"]
 
-    # populate data to number of units sheet
     numUnitsSheet.cell(row=gItr+2, column=1).value = g["name"]
     numUnitsSheet.cell(row=gItr+2, column=2).value = 1
 
-    for blkItr in range(len(genOnbarRows)):
+    costSheet.cell(row=gItr+2, column=1).value = g["name"]
+    costSheet.cell(row=gItr+2, column=2).value = 1
+
+    # check - check if scedule, Onbar and optimal schedule have same number of rows
+    if not (len(genOptRows) == len(genSchRows) == len(genOnbarRows)):
+        print("Schedule, Onbar and optimal schedule rows are not of same size for {0}".format(
+            targetDt))
+        exit(0)
+    for blkItr in range(len(genOptRows)):
+        scedVal = genOptRows[blkItr]["schVal"] - genSchRows[blkItr]["schVal"]
+        scedSheet.cell(row=gItr+2, column=blkItr +
+                       3).value = scedVal
+
+        numUnitsVal = math.ceil(
+            0.95*genOnbarRows[blkItr]["schVal"]/gens[gItr]["capPu"])
         numUnitsSheet.cell(row=gItr+2, column=blkItr +
-                           3).value = math.ceil(genOnbarRows[blkItr]["schVal"]/gens[gItr]["capPu"])
+                           3).value = numUnitsVal
+        genVcPu = gens[gItr]["vcPu"]
+        costSheet.cell(row=gItr+2, column=blkItr +
+                       3).value = scedVal*genVcPu*2.5
+
 
 # derive excel filename and file path
 resultsFilename = "sced_results_{0}.xlsx".format(
