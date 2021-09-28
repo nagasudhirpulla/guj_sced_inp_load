@@ -267,9 +267,9 @@ for gItr, g in enumerate(gens):
         genVcPu = g["vcPu"]
         scedBlkCost = scedVal*genVcPu*-2.5
         if scedBlkCost < 0:
-            genScedSaving += scedBlkCost
-        else:
             genScedCost += scedBlkCost
+        else:
+            genScedSaving += scedBlkCost
         costSheet.cell(row=gItr+2, column=blkItr + 3).value = scedBlkCost
     genScedMwh /= 4
     genScedCost /= 100000
