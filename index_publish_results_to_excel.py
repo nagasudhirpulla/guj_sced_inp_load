@@ -33,8 +33,10 @@ targetDt = dt.datetime(targetDt.year, targetDt.month, targetDt.day)
 # get target date from command line if present
 parser = argparse.ArgumentParser()
 parser.add_argument('--date', help='target Date')
+parser.add_argument('--noftp', action="store_true")
 args = parser.parse_args()
 targetDtStr = args.date
+noFtp = args.noftp
 if not targetDtStr == None:
     targetDt = dt.datetime.strptime(targetDtStr, "%Y-%m-%d")
 
@@ -218,7 +220,10 @@ wb.save(resultsFilePath)
 wb.close()
 
 # copy results file to ftp location
-isResFtpUploadSuccess = uploadFileToFtp(
-    resultsFilePath, ftpHost, ftpUname, ftpPass, ftpResFolder)
-print("Results excel FTP upload status = {0}".format(isResFtpUploadSuccess))
+if not noFtp:
+    isResFtpUploadSuccess = uploadFileToFtp(
+        resultsFilePath, ftpHost, ftpUname, ftpPass, ftpResFolder)
+    print("Results excel FTP upload status = {0}".format(
+        isResFtpUploadSuccess))
+
 print("SCED output data excel publish program complete...")
