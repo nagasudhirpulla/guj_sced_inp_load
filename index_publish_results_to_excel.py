@@ -101,6 +101,26 @@ costSheet.cell(row=1, column=2).value = "Region"
 for blk in range(1, 97):
     costSheet.cell(row=1, column=blk+2).value = blk
 
+# create summary sheet
+summarySheet = wb.create_sheet("Summary")
+# populate header to number of units sheet
+summarySheet.cell(row=1, column=1).value = "Plant Name"
+summarySheet.cell(row=1, column=2).value = "Region"
+for hItr, headr in enumerate(["Plant Name", "VC Paise/MWH", "Max. On-bar (MW)", "On-bar Energy (MWH)", "Max. Inj. Schedule (MW)",
+                              "Inj. Schedule Energy (MWH)", "Up Reserve (MWH)", "Down Reserve (MWH)", "Max. Optimal Schedule (MW)",
+                              "Optimal Schedule Energy (MWH)", "Max SCED (MW)", "Min SCED (MW)", "SCED Energy (MWH)",
+                              "Cost Incurred (Lakhs)", "Cost Savings (Lakhs)", "Net Savings (Lakhs)"]):
+    summarySheet.cell(row=1, column=hItr+1).value = headr
+
+# Initialize summary sheet all generators row values
+dayOnbarMwh = 0
+daySchMwh = 0
+dayOptMwh = 0
+dayTmMwh = 0
+dayScedMwh = 0
+dayScedCost = 0
+dayScedSaving = 0
+
 # get the generators info from db
 gensRepo = GensMasterRepo(
     dbHost, dbName, dbUname, dbPass)
@@ -145,9 +165,19 @@ for gItr, g in enumerate(gens):
             g["name"], targetDt))
         exit(0)
 
+    genMaxOnbar = 0
+    genOnbarMwh = 0
+    tmMwh = 0
     for blkItr in range(len(genOnbarRows)):
-        onbarSheet.cell(row=gItr+2, column=blkItr +
-                        3).value = genOnbarRows[blkItr]["schVal"]
+        onbarVal = genOnbarRows[blkItr]["schVal"]
+        tmVal = g["tmPu"]*math.ceil(onbarVal*0.95/g["capPu"])
+        if onbarVal > genMaxOnbar:
+            genMaxOnbar = onbarVal
+        genOnbarMwh += onbarVal
+        tmMwh += tmVal
+        onbarSheet.cell(row=gItr+2, column=blkItr + 3).value = onbarVal
+    genOnbarMwh /= 4
+    tmMwh /= 4
 
     # populate schedule data to Schedule sheet
     schSheet.cell(row=gItr+2, column=1).value = g["name"]
@@ -161,9 +191,15 @@ for gItr, g in enumerate(gens):
             g["name"], targetDt))
         exit(0)
 
+    genMaxSch = 0
+    genSchMwh = 0
     for blkItr in range(len(genSchRows)):
-        schSheet.cell(row=gItr+2, column=blkItr +
-                      3).value = genSchRows[blkItr]["schVal"]
+        schVal = genSchRows[blkItr]["schVal"]
+        if schVal > genMaxSch:
+            genMaxSch = schVal
+        genSchMwh += schVal
+        schSheet.cell(row=gItr+2, column=blkItr + 3).value = schVal
+    genSchMwh /= 4
 
     # populate data to optimal schedule sheet
     optSheet.cell(row=gItr+2, column=1).value = g["name"]
@@ -177,11 +213,17 @@ for gItr, g in enumerate(gens):
             g["name"], targetDt))
         exit(0)
 
+    genMaxOpt = 0
+    genOptMwh = 0
     for blkItr in range(len(genOptRows)):
-        optSheet.cell(row=gItr+2, column=blkItr +
-                      3).value = genOptRows[blkItr]["schVal"]
+        optVal = genOptRows[blkItr]["schVal"]
+        if optVal > genMaxOpt:
+            genMaxOpt = optVal
+        genOptMwh += optVal
+        optSheet.cell(row=gItr+2, column=blkItr + 3).value = optVal
+    genOptMwh /= 4
 
-    # populate data to sced sheet, number of units sheet and cost sheet
+    # populate data to sced sheet, number of units sheet, cost sheet and summary
     scedSheet.cell(row=gItr+2, column=1).value = g["name"]
     scedSheet.cell(row=gItr+2, column=2).value = 1
 
@@ -191,23 +233,83 @@ for gItr, g in enumerate(gens):
     costSheet.cell(row=gItr+2, column=1).value = g["name"]
     costSheet.cell(row=gItr+2, column=2).value = 1
 
-    # check - check if scedule, Onbar and optimal schedule have same number of rows
+    summarySheet.cell(row=gItr+2, column=1).value = g["name"]
+    summarySheet.cell(row=gItr+2, column=2).value = g["vcPu"]
+
+    # check - check if schedule, Onbar and optimal schedule have same number of rows
     if not (len(genOptRows) == len(genSchRows) == len(genOnbarRows)):
         print("Schedule, Onbar and optimal schedule rows are not of same size for {0}".format(
             targetDt))
         exit(0)
+    genMaxSced = None
+    genMinSced = None
+    genScedMwh = 0
+    genScedCost = 0
+    genScedSaving = 0
     for blkItr in range(len(genOptRows)):
         scedVal = genOptRows[blkItr]["schVal"] - genSchRows[blkItr]["schVal"]
+        if blkItr == 0:
+            genMaxSced = scedVal
+            genMinSced = scedVal
+        else:
+            if scedVal > genMaxSced:
+                genMaxSced = scedVal
+            if scedVal < genMinSced:
+                genMinSced = scedVal
+        genScedMwh += scedVal
         scedSheet.cell(row=gItr+2, column=blkItr +
                        3).value = scedVal
 
         numUnitsVal = math.ceil(
-            0.95*genOnbarRows[blkItr]["schVal"]/gens[gItr]["capPu"])
+            0.95*genOnbarRows[blkItr]["schVal"]/g["capPu"])
         numUnitsSheet.cell(row=gItr+2, column=blkItr +
                            3).value = numUnitsVal
-        genVcPu = gens[gItr]["vcPu"]
-        costSheet.cell(row=gItr+2, column=blkItr +
-                       3).value = scedVal*genVcPu*2.5
+        genVcPu = g["vcPu"]
+        scedBlkCost = scedVal*genVcPu*-2.5
+        if scedBlkCost < 0:
+            genScedSaving += scedBlkCost
+        else:
+            genScedCost += scedBlkCost
+        costSheet.cell(row=gItr+2, column=blkItr + 3).value = scedBlkCost
+    genScedMwh /= 4
+    genScedCost /= 100000
+    genScedSaving /= 100000
+
+    dayOnbarMwh += genOnbarMwh
+    daySchMwh += genSchMwh
+    dayOptMwh += genOptMwh
+    dayScedMwh += genScedMwh
+    dayScedCost += genScedCost
+    dayScedSaving += genScedSaving
+
+    summarySheet.cell(row=gItr+2, column=3).value = genMaxOnbar
+    summarySheet.cell(row=gItr+2, column=4).value = genOnbarMwh
+    summarySheet.cell(row=gItr+2, column=5).value = genMaxSch
+    summarySheet.cell(row=gItr+2, column=6).value = genSchMwh
+    summarySheet.cell(row=gItr+2, column=7).value = genOnbarMwh-genSchMwh
+    summarySheet.cell(row=gItr+2, column=8).value = genSchMwh-tmMwh
+    summarySheet.cell(row=gItr+2, column=9).value = genMaxOpt
+    summarySheet.cell(row=gItr+2, column=10).value = genOptMwh
+    summarySheet.cell(row=gItr+2, column=11).value = genMaxSced
+    summarySheet.cell(row=gItr+2, column=12).value = genMinSced
+    summarySheet.cell(row=gItr+2, column=13).value = genScedMwh
+    summarySheet.cell(row=gItr+2, column=14).value = genScedCost
+    summarySheet.cell(row=gItr+2, column=15).value = genScedSaving
+    summarySheet.cell(
+        row=gItr+2, column=16).value = genScedSaving+genScedCost
+
+# populate total generators row values after all the generators in summary sheet
+summarySheet.cell(row=len(gens)+2, column=1).value = "TOTAL"
+summarySheet.cell(row=len(gens)+2, column=4).value = dayOnbarMwh
+summarySheet.cell(row=len(gens)+2, column=6).value = daySchMwh
+summarySheet.cell(row=len(gens)+2, column=7).value = dayOnbarMwh-daySchMwh
+summarySheet.cell(row=len(gens)+2, column=8).value = daySchMwh-dayTmMwh
+summarySheet.cell(row=len(gens)+2, column=10).value = dayOptMwh
+summarySheet.cell(row=len(gens)+2, column=13).value = dayScedMwh
+summarySheet.cell(row=len(gens)+2, column=14).value = dayScedCost
+summarySheet.cell(row=len(gens)+2, column=15).value = dayScedSaving
+summarySheet.cell(
+    row=len(gens)+2, column=16).value = dayScedSaving+dayScedCost
 
 
 # derive excel filename and file path
