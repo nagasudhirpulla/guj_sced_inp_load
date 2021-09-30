@@ -167,17 +167,17 @@ for gItr, g in enumerate(gens):
 
     genMaxOnbar = 0
     genOnbarMwh = 0
-    tmMwh = 0
+    genTmMwh = 0
     for blkItr in range(len(genOnbarRows)):
         onbarVal = genOnbarRows[blkItr]["schVal"]
         tmVal = g["tmPu"]*math.ceil(onbarVal*0.95/g["capPu"])
         if onbarVal > genMaxOnbar:
             genMaxOnbar = onbarVal
         genOnbarMwh += onbarVal
-        tmMwh += tmVal
+        genTmMwh += tmVal
         onbarSheet.cell(row=gItr+2, column=blkItr + 3).value = onbarVal
     genOnbarMwh /= 4
-    tmMwh /= 4
+    genTmMwh /= 4
 
     # populate schedule data to Schedule sheet
     schSheet.cell(row=gItr+2, column=1).value = g["name"]
@@ -281,13 +281,14 @@ for gItr, g in enumerate(gens):
     dayScedMwh += genScedMwh
     dayScedCost += genScedCost
     dayScedSaving += genScedSaving
+    dayTmMwh += genTmMwh
 
     summarySheet.cell(row=gItr+2, column=3).value = genMaxOnbar
     summarySheet.cell(row=gItr+2, column=4).value = genOnbarMwh
     summarySheet.cell(row=gItr+2, column=5).value = genMaxSch
     summarySheet.cell(row=gItr+2, column=6).value = genSchMwh
     summarySheet.cell(row=gItr+2, column=7).value = genOnbarMwh-genSchMwh
-    summarySheet.cell(row=gItr+2, column=8).value = genSchMwh-tmMwh
+    summarySheet.cell(row=gItr+2, column=8).value = genSchMwh-genTmMwh
     summarySheet.cell(row=gItr+2, column=9).value = genMaxOpt
     summarySheet.cell(row=gItr+2, column=10).value = genOptMwh
     summarySheet.cell(row=gItr+2, column=11).value = genMaxSced
