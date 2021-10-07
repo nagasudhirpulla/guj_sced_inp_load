@@ -54,7 +54,6 @@ if not isSchFilePresent:
 if not all([isOnbarFilePresent, isSchFilePresent]):
     exit(0)
 
-
 # get generators master data
 gensRepo = GensMasterRepo(dbHost, dbName, dbUname, dbPass)
 genIdsDict = gensRepo.getGenIds()
@@ -80,17 +79,25 @@ reqGens = list(genIdsDict.keys())
 
 # read data from onbar file
 onbarDf = pd.read_csv(onbarFPath, nrows=96)
-
 # check - check if all generators are present in onbar file
-onbarGens = [x for x in onbarDf.columns if x in reqGens]
-
-# extract generators data from csv
-onbarDf = onbarDf[onbarGens]
+isAllDbGensInOnbarFile = len(
+    [x for x in reqGens if x not in onbarDf.columns]) == 0
+if not isAllDbGensInOnbarFile:
+    print("all db gens are not present in onbar file")
 
 # read data from schedule file
-schDf = pd.read_csv(schFPath, skiprows=1, nrows=96)
-schDf = schDf[reqGens]
+schDf = pd.read_csv(schFPath, skiprows=None, nrows=96)
+# check - check if all generators are present in onbar file
+isAllDbGensInSchFile = len([x for x in reqGens if x not in schDf.columns]) == 0
+if not isAllDbGensInSchFile:
+    print("all db gens are not present in schedule file")
 
+if not all([isAllDbGensInOnbarFile, isAllDbGensInSchFile]):
+    exit(0)
+
+# extract generators data from csv
+onbarDf = onbarDf[reqGens]
+schDf = schDf[reqGens]
 
 # check - check if onbar data of input csv has 96 rows
 isOnbarRows96 = onbarDf.shape[0] == 96
@@ -102,20 +109,14 @@ isSchRows96 = schDf.shape[0] == 96
 if not isSchRows96:
     print("Schedule file does not have 96 rows")
 
-# check - check if all on bar gens are present in sch df
-isOnbarGensInSchGens = len(
-    [x for x in schDf.columns if not (x in onbarGens)]) == 0
-if not isOnbarGensInSchGens:
-    print("All onbar dc generators are not present in schedule generators")
 
-if not all([isOnbarRows96, isSchRows96, isOnbarGensInSchGens]):
+if not all([isAllDbGensInOnbarFile, isAllDbGensInSchFile]):
     exit(0)
-
 
 # create rows for db insertion
 dbRows: List[ISchRow] = []
 for rIter in range(onbarDf.shape[0]):
-    for g in onbarGens:
+    for g in reqGens:
         onbarRow: ISchRow = {
             "schTime": targetDt+dt.timedelta(minutes=rIter*15),
             "genId": genIdsDict[g],
