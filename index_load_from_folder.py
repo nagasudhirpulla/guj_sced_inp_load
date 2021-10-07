@@ -8,7 +8,10 @@ import pandas as pd
 from src.config.appConfig import loadAppConfig
 from src.repos.gensMasterDataRepo import GensMasterRepo
 from src.repos.schDataRepo import SchedulesRepo
+from src.repos.dailyDataRepo import DailyDataRepo
+from src.services.gensMasterFileService import getGenMasterRowsFromFile
 from src.typeDefs.schRow import ISchRow
+from src.typeDefs.dailyDataRow import IDailyDataRow
 
 # read config file
 appConf = loadAppConfig()
@@ -16,6 +19,7 @@ dbHost = appConf["dbHost"]
 dbName = appConf["dbName"]
 dbUname = appConf["dbUname"]
 dbPass = appConf["dbPass"]
+gamsExcelPath = appConf["gamsExcelPath"]
 
 # make target date as tomorrow
 targetDt = dt.datetime.now() + dt.timedelta(days=1)
@@ -52,9 +56,24 @@ if not all([isOnbarFilePresent, isSchFilePresent]):
 
 
 # get generators master data
-gensRepo = GensMasterRepo(
-    appConf["dbHost"], appConf["dbName"], appConf["dbUname"], appConf["dbPass"])
+gensRepo = GensMasterRepo(dbHost, dbName, dbUname, dbPass)
 genIdsDict = gensRepo.getGenIds()
+
+# get generator daywise data from excel file
+gensDailyRows: IDailyDataRow = getGenMasterRowsFromFile(
+    genIdsDict, gamsExcelPath, "Data", targetDt)
+
+if len(gensDailyRows) == 0:
+    print("No generators db rows derived in daily generators data excel")
+    exit(0)
+
+# push schedules data to db
+dDataRepo = DailyDataRepo(dbHost, dbName, dbUname, dbPass)
+isDailyRowsInsertSuccess = dDataRepo.insertRows(gensDailyRows)
+
+if not isDailyRowsInsertSuccess:
+    print("Unable to insert generators daily data rows into database")
+    exit(0)
 
 # get the list of required generators
 reqGens = list(genIdsDict.keys())
