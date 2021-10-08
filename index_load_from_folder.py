@@ -80,17 +80,20 @@ reqGens = list(genIdsDict.keys())
 # read data from onbar file
 onbarDf = pd.read_csv(onbarFPath, nrows=96)
 # check - check if all generators are present in onbar file
-isAllDbGensInOnbarFile = len(
-    [x for x in reqGens if x not in onbarDf.columns]) == 0
+missingOnbarGens = [x for x in reqGens if x not in onbarDf.columns]
+isAllDbGensInOnbarFile = len(missingOnbarGens) == 0
 if not isAllDbGensInOnbarFile:
     print("all db gens are not present in onbar file")
+    print(', '.join(missingOnbarGens))
 
 # read data from schedule file
 schDf = pd.read_csv(schFPath, skiprows=None, nrows=96)
 # check - check if all generators are present in onbar file
-isAllDbGensInSchFile = len([x for x in reqGens if x not in schDf.columns]) == 0
+missingSchGens = [x for x in reqGens if x not in schDf.columns]
+isAllDbGensInSchFile = len(missingSchGens) == 0
 if not isAllDbGensInSchFile:
     print("all db gens are not present in schedule file")
+    print(', '.join(missingSchGens))
 
 if not all([isAllDbGensInOnbarFile, isAllDbGensInSchFile]):
     exit(0)
