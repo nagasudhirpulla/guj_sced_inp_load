@@ -1,6 +1,7 @@
 import argparse
 import datetime as dt
 import os
+from typing import List
 
 import openpyxl
 import pandas as pd
@@ -8,8 +9,10 @@ import pandas as pd
 from src.config.appConfig import loadAppConfig
 from src.repos.gensMasterDataRepo import GensMasterRepo
 from src.repos.schDataRepo import SchedulesRepo
+from src.repos.smpDataRepo import SmpRepo
 from src.services.gamsService import runGams
 from src.typeDefs.schRow import ISchRow
+from src.typeDefs.smpRow import ISmpRow
 
 # read config file
 appConf = loadAppConfig()
@@ -133,7 +136,7 @@ if not isGamsExecSuccess:
     print("GAMS execution was not successful...")
     exit(0)
 
-# push output data from GAMS excel to db
+# push optimal schedule output data from GAMS excel to db
 resultsSheetName = "Result Report"
 # check - if gams excel results sheet of gams input excel file exists
 if not (resultsSheetName in gamsExcel.sheetnames):
@@ -190,5 +193,37 @@ for genItr in range(gamsResDf.shape[0]):
 # push optimal schedules data to db
 isSchInsertSuccess = schRepo.insertSchedules(optSchRows)
 print("Optimal Schedule Insertion status = {0}".format(isSchInsertSuccess))
+
+# push SMP output data from GAMS excel to db
+# read dataframe from output sheet
+smpResultSheet = "Results2"
+smpResDf = pd.read_excel(gamsExcelPath, sheet_name=smpResultSheet,
+                         skiprows=5, nrows=1, usecols=range(27, 27+96))
+smpResCols = smpResDf.columns.tolist()
+try:
+    smpResCols = [int(x) for x in smpResCols]
+    smpResDf.columns = smpResCols
+except:
+    print("unable get column names as number in smp data parsing...")
+    exit(0)
+
+# check if all numbers from 1 to 96 are present in the smp dataframe
+if not all([x in smpResCols for x in range(1, 97)]):
+    print("96 blocks not present in smp data columns...")
+    exit(0)
+
+smpRows: List[ISmpRow] = []
+for blkItr in range(1, 97):
+    smpRow: ISmpRow = {
+        "dataTime": targetDt + dt.timedelta(minutes=(blkItr-1)*15),
+        "regTag": 'g',
+        "smpVal": smpResDf[blkItr].iloc[0].item(),
+        "rev": 0
+    }
+    smpRows.append(smpRow)
+# push optimal schedules data to db
+smpRepo = SmpRepo(dbHost, dbName, dbUname, dbPass)
+isSmpInsertSuccess = smpRepo.insertSmp(smpRows)
+print("SMP Insertion status = {0}".format(isSchInsertSuccess))
 
 print("execution complete...")

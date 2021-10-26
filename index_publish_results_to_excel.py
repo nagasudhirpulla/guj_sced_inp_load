@@ -9,6 +9,7 @@ from openpyxl import Workbook
 from src.config.appConfig import loadAppConfig
 from src.repos.gensMasterDataRepo import GensMasterRepo
 from src.repos.schDataRepo import SchedulesRepo
+from src.repos.smpDataRepo import SmpRepo
 from src.services.ftpService import uploadFileToFtp
 
 # read config file
@@ -311,6 +312,20 @@ summarySheet.cell(row=len(gens)+2, column=14).value = dayScedCost
 summarySheet.cell(row=len(gens)+2, column=15).value = dayScedSaving
 summarySheet.cell(
     row=len(gens)+2, column=16).value = dayScedSaving+dayScedCost
+
+# create smp sheet
+smpSheet = wb.create_sheet("SMP")
+# populate header to number of units sheet
+smpSheet.cell(row=1, column=1).value = "Time"
+smpSheet.cell(row=1, column=2).value = "SMP"
+
+smpRepo = SmpRepo(dbHost, dbName, dbUname, dbPass)
+smpRows = smpRepo.getSmp('g', 0, targetDt, targetDt +
+                      dt.timedelta(hours=23, minutes=59))
+for sItr, smpRow in enumerate(smpRows):
+    # populate generator data
+    smpSheet.cell(row=sItr+2, column=1).value = smpRow["dataTime"]
+    smpSheet.cell(row=sItr+2, column=2).value = smpRow["smpVal"]
 
 
 # derive excel filename and file path
