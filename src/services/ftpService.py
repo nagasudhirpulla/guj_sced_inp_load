@@ -7,7 +7,7 @@ def uploadFileToFtp(localFilePath: str, ftpHost: str, ftpUname: str, ftpPass: st
     isUploadSuccess: bool = False
     _, targetFilename = os.path.split(localFilePath)
     # connect to the FTP server
-    ftp = ftplib.FTP()
+    ftp = ftplib.FTP(timeout=20)
     ftp.connect(ftpHost, 21)
     time.sleep(2)
     ftp.login(ftpUname, ftpPass)
@@ -18,7 +18,7 @@ def uploadFileToFtp(localFilePath: str, ftpHost: str, ftpUname: str, ftpPass: st
 
     # Read file in binary mode
     with open(localFilePath, "rb") as file:
-        retCode = ftp.storbinary(f"STOR {targetFilename}", file)
+        retCode = ftp.storbinary(f"STOR {targetFilename}", file, blocksize=1024*1024)
         time.sleep(2)
 
     # quit and close the connection
@@ -32,7 +32,7 @@ def uploadFileToFtp(localFilePath: str, ftpHost: str, ftpUname: str, ftpPass: st
 def downloadFileFromFtp(localFilePath: str, targetFilename: str, ftpHost: str, ftpUname: str, ftpPass: str, remoteWorkingDirectory: str) -> bool:
     isDownloadSuccess: bool = False
     # connect to the FTP server
-    ftp = ftplib.FTP()
+    ftp = ftplib.FTP(timeout=10)
     ftp.connect(ftpHost, 21)
     time.sleep(2)
     ftp.login(ftpUname, ftpPass)

@@ -85,6 +85,9 @@ isAllDbGensInOnbarFile = len(missingOnbarGens) == 0
 if not isAllDbGensInOnbarFile:
     print("all db gens are not present in onbar file")
     print(', '.join(missingOnbarGens))
+    # make onbar DC = 0 for missing generators
+    for mGen in missingOnbarGens:
+        onbarDf[mGen] = 0
 
 # read data from schedule file
 schDf = pd.read_csv(schFPath, skiprows=None, nrows=96)
@@ -95,7 +98,7 @@ if not isAllDbGensInSchFile:
     print("all db gens are not present in schedule file")
     print(', '.join(missingSchGens))
 
-if not all([isAllDbGensInOnbarFile, isAllDbGensInSchFile]):
+if not all([isAllDbGensInSchFile]):
     exit(0)
 
 # extract generators data from csv
