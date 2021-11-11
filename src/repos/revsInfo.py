@@ -93,6 +93,47 @@ class RevsInfoRepo():
                 conn.close()
         return revInfo
 
+    def getAllRevsForDate(self, targetDt: dt.datetime) -> List[IRevInfoRecord]:
+        revs: List[IRevInfoRecord] = []
+        try:
+            # get the connection object
+            conn = psycopg2.connect(host=self.dbHost, dbname=self.dbname,
+                                    user=self.uname, password=self.dbPass)
+            # get the cursor from connection
+            cur = conn.cursor()
+            # create the query
+            postgreSQL_select_Query = "SELECT id, rev_date, guj_rev, rev_num, rev_time FROM public.revs_info where rev_date = %s order by rev_num"
+
+            # execute the query
+            cur.execute(postgreSQL_select_Query, (dt.datetime(
+                targetDt.year, targetDt.month, targetDt.day),))
+
+            # fetch all the records from cursor
+            records = cur.fetchall()
+
+            # iterate through all the fetched records
+            for rItr in range(len(records)):
+                dbRow = records[rItr]
+                revInfo: IRevInfoRecord = {
+                    "id": dbRow[0],
+                    "revDt": dbRow[1],
+                    "gujRev": dbRow[2],
+                    "rev": dbRow[3],
+                    "revTs": dbRow[4]
+                }
+                revs.append(revInfo)
+        except (Exception, psycopg2.Error) as error:
+            print("Error while fetching data from PostgreSQL", error)
+            revs = []
+        finally:
+            # closing database connection and cursor
+            if(conn):
+                # close the cursor object to avoid memory leaks
+                cur.close()
+                # close the connection object also
+                conn.close()
+        return revs
+
     def insertRevInfo(self, targetDt: dt.datetime, gujRevNum: int, rev: int, revTs: dt.datetime):
         dbConn = None
 

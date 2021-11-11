@@ -47,12 +47,13 @@ def downloadFilesFromFtp(localFilePaths: List[str], targetFilenames: List[str], 
 
     # Read file in binary mode
     for fItr in range(len(localFilePaths)):
+        print("downloading file from ftp = {0}".format(targetFilename))
         localFilePath = localFilePaths[fItr]
         targetFilename = targetFilenames[fItr]
         with open(localFilePath, "wb") as file:
             retCode = ftp.retrbinary("RETR " + targetFilename, file.write)
             time.sleep(2)
-    
+
     # quit and close the connection
     ftp.quit()
 

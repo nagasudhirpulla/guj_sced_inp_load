@@ -55,3 +55,44 @@ class LatestRevsRepo():
                 # close the connection object also
                 conn.close()
         return latestRevInfo
+
+    def upsertLatestRevInfo(self, targetDt: dt.datetime, gujRevNum: int, rev: int):
+        dbConn = None
+
+        isInsertSuccess = True
+        try:
+            # get the connection object
+            dbConn = psycopg2.connect(host=self.dbHost, dbname=self.dbname,
+                                      user=self.uname, password=self.dbPass)
+            # get cursor for raw data table
+            dbCur = dbConn.cursor()
+
+            # create sql for insertion
+            dataInsertionTuples: List[Tuple] = [(dt.datetime.strftime(targetDt, "%Y-%m-%d %H:%M:%S"),
+                                                gujRevNum, rev)]
+
+            dataText = ','.join(dbCur.mogrify('(%s,%s,%s)', row).decode(
+                "utf-8") for row in dataInsertionTuples)
+
+            sqlTxt = 'INSERT INTO public.daywise_latest_revs(\
+        	rev_date, latest_guj_rev, latest_rev)\
+        	VALUES {0} on conflict (rev_date) \
+            do update set latest_guj_rev = excluded.latest_guj_rev, latest_rev=excluded.latest_rev'.format(dataText)
+
+            # execute the sql to perform insertion
+            dbCur.execute(sqlTxt)
+
+            # commit the changes
+            dbConn.commit()
+        except Exception as e:
+            isInsertSuccess = False
+            print('Error while bulk insertion of latest revision info into db')
+            print(e)
+        finally:
+            # closing database connection and cursor
+            if(dbConn):
+                # close the cursor object to avoid memory leaks
+                dbCur.close()
+                # close the connection object also
+                dbConn.close()
+        return isInsertSuccess

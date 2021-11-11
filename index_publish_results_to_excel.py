@@ -13,6 +13,7 @@ from src.repos.smpDataRepo import SmpRepo
 from src.services.ftpService import uploadFileToFtp
 
 # read config file
+print("SCED output data excel publish program start...")
 appConf = loadAppConfig()
 dbHost = appConf["dbHost"]
 dbName = appConf["dbName"]

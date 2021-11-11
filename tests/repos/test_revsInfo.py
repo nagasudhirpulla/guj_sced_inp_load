@@ -20,3 +20,14 @@ class TestRevsInfoRepo(unittest.TestCase):
         latestRevInfo = revsInfoRepo.getMaxLocalRevObjForDate(
             dt.datetime.now())
         self.assertFalse(latestRevInfo == None)
+
+    def test_getAllRevsForDate(self) -> None:
+        appConf = self.appConf
+        dbHost = appConf["dbHost"]
+        dbName = appConf["dbName"]
+        dbUname = appConf["dbUname"]
+        dbPass = appConf["dbPass"]
+        revsInfoRepo = RevsInfoRepo(dbHost, dbName, dbUname, dbPass)
+        allRevs = revsInfoRepo.getAllRevsForDate(
+            dt.datetime.now())
+        self.assertFalse(len(allRevs) == 0)

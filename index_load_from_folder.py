@@ -20,6 +20,7 @@ from src.typeDefs.dailyDataRow import IDailyDataRow
 from src.typeDefs.schRow import ISchRow
 from src.typeDefs.revInfo import IRevInfoRecord
 
+print("SCED input files data loading program start...")
 # read config file
 appConf = loadAppConfig()
 remoteFilesDirectory = appConf["ftpFolderPath"]
