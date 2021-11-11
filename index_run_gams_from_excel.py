@@ -25,17 +25,34 @@ gamsCodePath = appConf["gamsCodePath"]
 gamsLstPath = appConf["gamsLstPath"]
 gamsExcelPath = appConf["gamsExcelPath"]
 
-# make target date as tomorrow
-targetDt = dt.datetime.now() + dt.timedelta(days=1)
+# make default target date as today
+targetDt = dt.datetime.now()
 targetDt = dt.datetime(targetDt.year, targetDt.month, targetDt.day)
 
 # get target date from command line if present
 parser = argparse.ArgumentParser()
 parser.add_argument('--date', help='target Date')
+parser.add_argument('--doff', help='Date offset')
+parser.add_argument('--rev', help='revision number')
+parser.add_argument('--single', action="store_true")
 args = parser.parse_args()
 targetDtStr = args.date
 if not targetDtStr == None:
     targetDt = dt.datetime.strptime(targetDtStr, "%Y-%m-%d")
+targetDtOffsetStr = args.doff
+targetDtOffset = 0
+if not targetDtOffsetStr == None:
+    targetDtOffset = int(targetDtOffsetStr)
+# add offset days to target date
+targetDt = targetDt + dt.timedelta(days=targetDtOffset)
+
+# flag that specifies to process only target revision and avoid processing revisions beyond this revision
+isProcessOnlyOneRev = args.single
+
+targetGujRevStr = args.rev
+targetGujRev = None
+if not targetGujRevStr == None:
+    targetGujRev = int(targetGujRevStr)
 
 # check - check if gams excel file exists
 isGamsExcelPresent = os.path.isfile(gamsExcelPath)
