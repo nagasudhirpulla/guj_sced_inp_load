@@ -7,6 +7,7 @@ import pandas as pd
 from openpyxl import Workbook
 
 from src.config.appConfig import loadAppConfig
+from src.repos.latestRevData import LatestRevsRepo
 from src.repos.gensMasterDataRepo import GensMasterRepo
 from src.repos.schDataRepo import SchedulesRepo
 from src.repos.smpDataRepo import SmpRepo
@@ -36,11 +37,36 @@ targetDt = dt.datetime(targetDt.year, targetDt.month, targetDt.day)
 parser = argparse.ArgumentParser()
 parser.add_argument('--date', help='target Date')
 parser.add_argument('--noftp', action="store_true")
+parser.add_argument('--doff', help='Date offset')
+parser.add_argument('--rev', help='revision number')
+parser.add_argument('--single', action="store_true")
 args = parser.parse_args()
 targetDtStr = args.date
 noFtp = args.noftp
 if not targetDtStr == None:
     targetDt = dt.datetime.strptime(targetDtStr, "%Y-%m-%d")
+targetDtOffsetStr = args.doff
+targetDtOffset = 0
+if not targetDtOffsetStr == None:
+    targetDtOffset = int(targetDtOffsetStr)
+# add offset days to target date
+targetDt = targetDt + dt.timedelta(days=targetDtOffset)
+
+targetRevStr = args.rev
+targetRev = None
+if not targetRevStr == None:
+    targetRev = int(targetRevStr)
+latRevRepo = LatestRevsRepo(dbHost, dbName, dbUname, dbPass)
+# if revision number is not specified from cli, then latest revision number for the date is to be determined from db
+# if no latest revision number is found for the date, then the latest revision number for the date is 0
+if targetRev == None:
+    latestRevInfo = latRevRepo.getLatestRevForDate(targetDt)
+    if not (latestRevInfo == None):
+        targetRev = latestRevInfo["latestRev"]
+
+if targetRev == None:
+    print("target revision data not found, hence exiting...")
+    exit(0)
 
 resDumpFolder = appConf["resultsDumpFolder"]
 # check - check if results dumping folder exists
@@ -160,7 +186,7 @@ for gItr, g in enumerate(gens):
     onbarSheet.cell(row=gItr+2, column=2).value = 1
 
     genOnbarRows = schRepo.getGenSchedules(
-        "onbar", g["id"], 0, targetDt, targetDt+dt.timedelta(hours=23, minutes=59))
+        "onbar", g["id"], targetRev, targetDt, targetDt+dt.timedelta(hours=23, minutes=59))
     # check - check if we got 96 rows for loading onbar data for a generator for the desired date
     if not len(genOnbarRows) == 96:
         print("96 rows not present in onbar data of {0} for the date {1}".format(
@@ -186,7 +212,7 @@ for gItr, g in enumerate(gens):
     schSheet.cell(row=gItr+2, column=2).value = 1
 
     genSchRows = schRepo.getGenSchedules(
-        "sch", g["id"], 0, targetDt, targetDt+dt.timedelta(hours=23, minutes=59))
+        "sch", g["id"], targetRev, targetDt, targetDt+dt.timedelta(hours=23, minutes=59))
     # check - check if we got 96 rows for loading sced data for a generator for the desired date
     if not len(genSchRows) == 96:
         print("96 rows not present in schedule data of {0} for the date {1}".format(
@@ -208,7 +234,7 @@ for gItr, g in enumerate(gens):
     optSheet.cell(row=gItr+2, column=2).value = 1
 
     genOptRows = schRepo.getGenSchedules(
-        "opt", g["id"], 0, targetDt, targetDt+dt.timedelta(hours=23, minutes=59))
+        "opt", g["id"], targetRev, targetDt, targetDt+dt.timedelta(hours=23, minutes=59))
     # check - check if we got 96 rows for loading sced data for a generator for the desired date
     if not len(genOptRows) == 96:
         print("96 rows not present in optimal schedule data of {0} for the date {1}".format(
@@ -321,8 +347,8 @@ smpSheet.cell(row=1, column=1).value = "Time"
 smpSheet.cell(row=1, column=2).value = "SMP"
 
 smpRepo = SmpRepo(dbHost, dbName, dbUname, dbPass)
-smpRows = smpRepo.getSmp('g', 0, targetDt, targetDt +
-                      dt.timedelta(hours=23, minutes=59))
+smpRows = smpRepo.getSmp('g', targetRev, targetDt, targetDt +
+                         dt.timedelta(hours=23, minutes=59))
 for sItr, smpRow in enumerate(smpRows):
     # populate generator data
     smpSheet.cell(row=sItr+2, column=1).value = smpRow["dataTime"]
@@ -330,8 +356,8 @@ for sItr, smpRow in enumerate(smpRows):
 
 
 # derive excel filename and file path
-resultsFilename = "sced_results_{0}.xlsx".format(
-    dt.datetime.strftime(targetDt, "%Y_%m_%d"))
+resultsFilename = "sced_results_{0}_{1}.xlsx".format(
+    dt.datetime.strftime(targetDt, "%Y_%m_%d"), targetRev)
 resultsFilePath = os.path.join(resDumpFolder, resultsFilename)
 
 # save workbook in dumps folder
