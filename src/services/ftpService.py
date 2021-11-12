@@ -47,9 +47,9 @@ def downloadFilesFromFtp(localFilePaths: List[str], targetFilenames: List[str], 
 
     # Read file in binary mode
     for fItr in range(len(localFilePaths)):
-        print("downloading file from ftp = {0}".format(targetFilename))
         localFilePath = localFilePaths[fItr]
         targetFilename = targetFilenames[fItr]
+        print("downloading file from ftp = {0}".format(targetFilename))
         with open(localFilePath, "wb") as file:
             retCode = ftp.retrbinary("RETR " + targetFilename, file.write)
             time.sleep(2)

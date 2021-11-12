@@ -68,7 +68,7 @@ latRevRepo = LatestRevsRepo(dbHost, dbName, dbUname, dbPass)
 # if revision number is not specified from cli, then latest revision number for the date is to be determined from db
 # if no latest revision number is found for the date, then the latest revision number for the date is 0
 if targetGujRev == None:
-    latestRevInfo = latRevRepo.getLatestRevForDate(dt.datetime.now())
+    latestRevInfo = latRevRepo.getLatestRevForDate(targetDt)
     if latestRevInfo == None:
         targetGujRev = 0
     else:
@@ -112,7 +112,8 @@ for fInfo in targetDtFtpFiles:
         # get revision time from schedule file
         try:
             with open(os.path.join(inpFolderPath, schFname), 'r') as schCsvReader:
-                revInfoStr: str = schCsvReader.readlines()[0].split(",")[0].strip()
+                revInfoStr: str = schCsvReader.readlines()[0].split(",")[
+                    0].strip()
                 revTs = extractTsFromRevInfoStr(revInfoStr)
                 revFilesInfo[fRev]["revTime"] = revTs
         except:

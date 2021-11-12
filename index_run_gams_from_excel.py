@@ -61,7 +61,7 @@ latRevRepo = LatestRevsRepo(dbHost, dbName, dbUname, dbPass)
 # if revision number is not specified from cli, then latest revision number for the date is to be determined from db
 # if no latest revision number is found for the date, then the latest revision number for the date is 0
 if targetGujRev == None:
-    latestRevInfo = latRevRepo.getLatestRevForDate(dt.datetime.now())
+    latestRevInfo = latRevRepo.getLatestRevForDate(targetDt)
     if latestRevInfo == None:
         targetGujRev = 0
     else:
@@ -133,7 +133,6 @@ resultsSheetName = "Result Report"
 if not (resultsSheetName in gamsExcel.sheetnames):
     print('GAMS results data sheet does not exist in gams excel file...')
     exit(0)
-
 
 
 # fetch onbar data
@@ -280,4 +279,3 @@ for revObj in targetRevs:
     _ = latRevRepo.upsertLatestRevInfo(targetDt, gujRev, localRev)
 
 print("SCED GAMS computation program complete...")
-
