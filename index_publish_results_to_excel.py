@@ -29,8 +29,8 @@ ftpUname = appConf["ftpUname"]
 ftpPass = appConf["ftpPass"]
 ftpResFolder = appConf["ftpResultsFolder"]
 
-# make target date as tomorrow
-targetDt = dt.datetime.now() + dt.timedelta(days=1)
+# make default target date as today
+targetDt = dt.datetime.now()
 targetDt = dt.datetime(targetDt.year, targetDt.month, targetDt.day)
 
 # get target date from command line if present
