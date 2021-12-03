@@ -237,6 +237,8 @@ for gujRev in targetGujRevNums:
 
     # create rows for db insertion
     dbRows: List[ISchRow] = []
+    onbarDf = onbarDf.fillna(method="ffill").fillna(method="bfill")
+    schDf = schDf.fillna(method="ffill").fillna(method="bfill")
     for rIter in range(onbarDf.shape[0]):
         for g in reqGens:
             onbarRow: ISchRow = {
